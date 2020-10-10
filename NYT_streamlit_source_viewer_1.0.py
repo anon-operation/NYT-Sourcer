@@ -44,20 +44,23 @@ def load_NYT_data():
             section=article.section
             url=article.url
             author=article.author
-            date=article.pubDate
+            date=str(article.pubDate)
+            dSplit=date.split("T")
+            day=dSplit[0]
             count=1
             innerList=[section,url,author,date]
             sources=article.sources
             NLTKs=sources['NLTK']
             for name in NLTKs:
                 lower=name.lower()
-                print(lower, section, url, date, title, count, sep=",",file=outfile)
+                print(lower, section, url, day, title, count, sep=",",file=outfile)
         except:
             tryVar=0
     outfile.flush()
     outfile.close()
 
-    df=pd.read_csv('nameDataFrame.csv', sep=',')
+    df=pd.read_csv('streamlitData.csv', sep=',')
+
     return df
 
 
@@ -79,6 +82,7 @@ data_load_state=st.text('Loading data......')
 # Load data
 data=load_NYT_data()
 df=pd.DataFrame(data)
+#df[' Date ']=pd.to_datetime(df[' Date '], format='%Y')
 
 data_load_state.text('')
 
@@ -99,31 +103,31 @@ if modifyChart:
     #plotBySection=st.checkbox('plot by section')
     df3=df
     if section_selectbox=="All sections":
-        fig=px.bar(df, x="Name ", y=" Count", color=" Section ",
-            hover_data=[" Title ", " Url ", " Date "])
+        fig=px.bar(df, x="Name", y="Count", color="Section",
+            hover_data=["Title", "Url", "Date"])
         st.plotly_chart(fig, use_container_width=True)
     else:
         lowercaseSelection=section_selectbox.lower()
         if lowercaseSelection=="u.s.":
             df3=df
             df3=df.convert_dtypes()
-            df3=df3[df3[' Section '].str.contains("us")]
-            df3=df3[~df3[' Section '].str.contains("ness")]
-            fig=px.bar(df3, x="Name ", y=" Count", color=" Section ",
-                hover_data=[" Title ", " Url ", " Date "])
+            df3=df3[df3['Section'].str.contains("us")]
+            df3=df3[~df3['Section'].str.contains("ness")]
+            fig=px.bar(df3, x="Name", y="Count", color="Section",
+                hover_data=["Title", "Url", "Date"])
             st.plotly_chart(fig, use_container_width=True)
         else:
             df3=df
             df3=df.convert_dtypes()
-            df3=df3[df3[' Section '].str.contains(lowercaseSelection)]
-            fig=px.bar(df3, x="Name ", y=" Count", color=" Section ",
-                    hover_data=[" Title ", " Url ", " Date "])
+            df3=df3[df3['Section'].str.contains(lowercaseSelection)]
+            fig=px.bar(df3, x="Name", y="Count", color="Section",
+                    hover_data=["Title", "Url", "Date"])
             st.plotly_chart(fig, use_container_width=True)
 else:
     st.text("Chart shows names that appear more than once.")
-    df3=df.loc[df.duplicated(subset='Name ', keep=False), :]
-    fig=px.bar(df3, x="Name ", y=" Count", color=" Section ",
-            hover_data=[" Title ", " Url ", " Date "])
+    df3=df.loc[df.duplicated(subset='Name', keep=False), :]
+    fig=px.bar(df3, x="Name", y="Count", color="Section",
+            hover_data=["Title", "Url", "Date"])
     st.plotly_chart(fig, use_container_width=True)
 
 
@@ -132,22 +136,22 @@ else:
 showData=st.checkbox("Show the raw data")
 
 if(showData==True):
-    matchGraph=st.checkbox("Show data displayed in chart")
+    matchGraph=st.checkbox("Show data displayed in selected section")
     if matchGraph:
 ######## Sort data based on user's search term
-        st.subheader('Raw Data from chart')
+        st.subheader('Raw Data from '+section_selectbox+' section of New York Times')
         name_user_input = st.text_input("Search for a name.", "")
         lowerName=name_user_input.lower()
-        indexList=df3[df3['Name '].str.contains(lowerName)]
-        restOf=df3[~df3['Name '].str.contains(lowerName)]
+        indexList=df3[df3['Name'].str.contains(lowerName)]
+        restOf=df3[~df3['Name'].str.contains(lowerName)]
         sortedDf=pd.concat([indexList, restOf], ignore_index=True, sort=False)
         st.dataframe(sortedDf.style.applymap(highlight_name1))
     else:
         st.subheader('Raw Data from entire database')
         name_user_input = st.text_input("Search for a name.", "")
         lowerName=name_user_input.lower()
-        indexList=df[df['Name '].str.contains(lowerName)]
-        restOf=df[~df['Name '].str.contains(lowerName)]
+        indexList=df[df['Name'].str.contains(lowerName)]
+        restOf=df[~df['Name'].str.contains(lowerName)]
         sortedDf=pd.concat([indexList, restOf], ignore_index=True, sort=False)
         st.dataframe(sortedDf.style.applymap(highlight_name1))
 
