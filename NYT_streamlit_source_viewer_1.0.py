@@ -45,15 +45,14 @@ def load_NYT_data():
             url=article.url
             author=article.author
             date=str(article.pubDate)
-            dSplit=date.split("T")
-            day=dSplit[0]
+            fixedDate=date[:-6]
             count=1
             innerList=[section,url,author,date]
             sources=article.sources
             NLTKs=sources['NLTK']
             for name in NLTKs:
                 lower=name.lower()
-                print(lower, section, url, day, title, count, sep=",",file=outfile)
+                print(lower, section, url, fixedDate, title, count, sep=",",file=outfile)
         except:
             tryVar=0
     outfile.flush()
@@ -82,7 +81,7 @@ data_load_state=st.text('Loading data......')
 # Load data
 data=load_NYT_data()
 df=pd.DataFrame(data)
-#df[' Date ']=pd.to_datetime(df[' Date '], format='%Y')
+df['Date']=pd.to_datetime(df['Date'], format='%Y-%m-%dT%H:%M:%S')
 
 data_load_state.text('')
 
@@ -136,16 +135,28 @@ else:
 showData=st.checkbox("Show the raw data")
 
 if(showData==True):
-    matchGraph=st.checkbox("Show data displayed in selected section")
-    if matchGraph:
+    if modifyChart:
 ######## Sort data based on user's search term
-        st.subheader('Raw Data from '+section_selectbox+' section of New York Times')
-        name_user_input = st.text_input("Search for a name.", "")
-        lowerName=name_user_input.lower()
-        indexList=df3[df3['Name'].str.contains(lowerName)]
-        restOf=df3[~df3['Name'].str.contains(lowerName)]
-        sortedDf=pd.concat([indexList, restOf], ignore_index=True, sort=False)
-        st.dataframe(sortedDf.style.applymap(highlight_name1))
+        matchGraph=st.checkbox("Show data displayed in selected section")
+        if matchGraph:
+            if (section_selectbox =="All sections"):
+                st.subheader('Raw Data from '+section_selectbox+' of New York Times')
+            else:
+                st.subheader('Raw Data from the '+section_selectbox+' section of New York Times')
+            name_user_input = st.text_input("Search for a name.", "")
+            lowerName=name_user_input.lower()
+            indexList=df3[df3['Name'].str.contains(lowerName)]
+            restOf=df3[~df3['Name'].str.contains(lowerName)]
+            sortedDf=pd.concat([indexList, restOf], ignore_index=True, sort=False)
+            st.dataframe(sortedDf.style.applymap(highlight_name1))
+        else:
+            st.subheader('Raw Data from entire database')
+            name_user_input = st.text_input("Search for a name.", "")
+            lowerName=name_user_input.lower()
+            indexList=df[df['Name'].str.contains(lowerName)]
+            restOf=df[~df['Name'].str.contains(lowerName)]
+            sortedDf=pd.concat([indexList, restOf], ignore_index=True, sort=False)
+            st.dataframe(sortedDf.style.applymap(highlight_name1))
     else:
         st.subheader('Raw Data from entire database')
         name_user_input = st.text_input("Search for a name.", "")
