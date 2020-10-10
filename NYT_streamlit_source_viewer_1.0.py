@@ -97,6 +97,7 @@ if modifyChart:
                                     "Style", "Sports", "Arts"))
     #showAll=st.button('plot all names')
     #plotBySection=st.checkbox('plot by section')
+    df3=df
     if section_selectbox=="All sections":
         fig=px.bar(df, x="Name ", y=" Count", color=" Section ",
             hover_data=[" Title ", " Url ", " Date "])
@@ -131,17 +132,15 @@ else:
 showData=st.checkbox("Show the raw data")
 
 if(showData==True):
-    showDups=st.checkbox("Show only names that appear in more than one story")
-    if showDups:
-        st.subheader('Raw Data')
+    matchGraph=st.checkbox("Show data displayed in chart")
+    if matchGraph:
+        st.subheader('Raw Data from chart')
         name_user_input = st.text_input("Search for a name.", "trump")
-        df2=df.loc[df.duplicated(subset='Name ', keep=False), :]
-        st.dataframe(df2.style.applymap(highlight_name1))
+        st.dataframe(df3.style.applymap(highlight_name1))
     else:
-        st.subheader('Raw Data')
+        st.subheader('Raw Data from entire database')
         name_user_input = st.text_input("Search for a name.", "trump")
         st.dataframe(df.style.applymap(highlight_name1))
-
 
     
 ##
