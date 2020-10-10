@@ -134,15 +134,24 @@ showData=st.checkbox("Show the raw data")
 if(showData==True):
     matchGraph=st.checkbox("Show data displayed in chart")
     if matchGraph:
+######## Sort data based on user's search term
         st.subheader('Raw Data from chart')
-        name_user_input = st.text_input("Search for a name.", "trump")
-        st.dataframe(df3.style.applymap(highlight_name1))
+        name_user_input = st.text_input("Search for a name.", "")
+        lowerName=name_user_input.lower()
+        indexList=df3[df3['Name '].str.contains(lowerName)]
+        restOf=df3[~df3['Name '].str.contains(lowerName)]
+        sortedDf=pd.concat([indexList, restOf], ignore_index=True, sort=False)
+        st.dataframe(sortedDf.style.applymap(highlight_name1))
     else:
         st.subheader('Raw Data from entire database')
-        name_user_input = st.text_input("Search for a name.", "trump")
-        st.dataframe(df.style.applymap(highlight_name1))
+        name_user_input = st.text_input("Search for a name.", "")
+        lowerName=name_user_input.lower()
+        indexList=df[df['Name '].str.contains(lowerName)]
+        restOf=df[~df['Name '].str.contains(lowerName)]
+        sortedDf=pd.concat([indexList, restOf], ignore_index=True, sort=False)
+        st.dataframe(sortedDf.style.applymap(highlight_name1))
 
-    
+
 ##
 ##DATE_COLUMN='date/time'
 ##DATA_URL=('https://s3-us-west-2.amazonaws.com/'
