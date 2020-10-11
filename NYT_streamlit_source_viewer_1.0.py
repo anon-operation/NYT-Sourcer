@@ -27,8 +27,7 @@ class StoryMetadata:
 
 st.title("NYT Sourcer App")
 
-#filename="TestForGraph"
-filename="oct10"
+filename="runningDatabase"
 totalFileName=(filename+".pickle")
 outfile = open("streamlitData.csv", "w", encoding='utf-8')
 
