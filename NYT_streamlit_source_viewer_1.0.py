@@ -198,6 +198,23 @@ if(showData==True):
         st.dataframe(sortedDf.style.applymap(highlight_name1))
 
 
+################ Search by Article
+st.text("")
+st.subheader("Search for a specific article")
+article_user_input = st.text_input("Search for an article.", "")
+lowerArtName=article_user_input.lower()
+articleDf=df
+articleDf['Title']=articleDf['Title'].str.lower()
+articleDf.loc[:,'Title']=articleDf.loc[:,'Title'].str.replace("`|’", "'", regex=True)
+artIndexList=articleDf[articleDf['Title'].str.contains(lowerArtName)]
+if artIndexList.empty:
+    st.error("There are no article titles that contain "+article_user_input)
+else:
+    st.dataframe(artIndexList)
+
+
+
+
 ##
 ##DATE_COLUMN='date/time'
 ##DATA_URL=('https://s3-us-west-2.amazonaws.com/'
