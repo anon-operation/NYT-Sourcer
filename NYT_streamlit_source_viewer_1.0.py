@@ -25,7 +25,7 @@ class StoryMetadata:
 
 
 
-st.title("NYT Sourcer App")
+st.title("The Sourcer")
 
 filename="runningDatabase"
 totalFileName=(filename+".pickle")
@@ -94,7 +94,22 @@ data_load_state.text('')
 
 ########## Graphing
         
-st.header("Names in New York Times Stories")
+st.header("Find names that appear in news stories")
+
+######### sidebar
+st.sidebar.header("Welcome to the Sourcer App")
+st.sidebar.subheader("This app shows names that appear in the text of New York Times Articles.")
+moreInfo=st.sidebar.button("More info")
+if moreInfo:
+    st.sidebar.subheader("This app began as a question:")
+    st.sidebar.subheader( "\"Is there a quick way to figure out who is mentioned in a New York Times story?\"")
+    st.sidebar.subheader("From there the project grew...and is still growing!")
+    st.sidebar.subheader("Each day the database of included articles grows. They come from the New York Times' front page.")
+    st.sidebar.subheader("Additionally, I'm working to improve the accuracy of the name recognition, so that names like \"Mr. Trump\" and \"Donald Trump\" are seen as the same name and to exclude place names from recognition.")
+    st.sidebar.subheader("The source code is availible for inspection at: https://github.com/anon-operation/NYT-Sourcer.git")
+
+###############
+
 modifyChart=st.checkbox("Click here for more oprtions")
 if modifyChart:
     try:
