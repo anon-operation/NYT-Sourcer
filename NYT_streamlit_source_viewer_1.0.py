@@ -211,6 +211,12 @@ if artIndexList.empty:
     st.error("There are no article titles that contain "+article_user_input)
 else:
     st.dataframe(artIndexList)
+    printList=st.button("Get list of names in aticle(s) with \""+article_user_input+"\" in the title")
+    if printList:
+        listDf=artIndexList['Name']
+        st.text("You can copy this list of names.")
+        st.dataframe(listDf)
+ 
 
 
 
