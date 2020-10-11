@@ -5,6 +5,7 @@ import pickle
 #import plotly.figure_factory as ff
 import plotly.express as px
 import plotly.io as pio
+import datetime
 pio.renderers.default = 'firefox'
 
 
@@ -26,7 +27,8 @@ class StoryMetadata:
 
 st.title("NYT Sourcer App")
 
-filename="TestForGraph"
+#filename="TestForGraph"
+filename="oct10"
 totalFileName=(filename+".pickle")
 outfile = open("streamlitData.csv", "w", encoding='utf-8')
 
@@ -75,6 +77,8 @@ def highlight_name1(val):
 
 
 
+
+
 # create loading message
 data_load_state=st.text('Loading data......')
 
@@ -82,6 +86,8 @@ data_load_state=st.text('Loading data......')
 data=load_NYT_data()
 df=pd.DataFrame(data)
 df['Date']=pd.to_datetime(df['Date'], format='%Y-%m-%dT%H:%M:%S')
+df['Publication Date']=df['Date']
+
 
 data_load_state.text('')
 
@@ -92,45 +98,56 @@ data_load_state.text('')
 st.header("Names in New York Times Stories")
 modifyChart=st.checkbox("Click here for more oprtions")
 if modifyChart:
-    section_selectbox=st.selectbox("What section would you like to see?",
-                                   ("All sections", "Health", "U.S.", "Business", "Upshot",
-                                    "Magazine", "Briefing", "Podcasts",
-                                    "Opinion", "N.Y. Region", "World",
-                                    "Climate", "Dining", "Technology",
-                                    "Style", "Sports", "Arts"))
-    #showAll=st.button('plot all names')
-    #plotBySection=st.checkbox('plot by section')
-    df3=df
-    if section_selectbox=="All sections":
-        fig=px.bar(df, x="Name", y="Count", color="Section",
-            hover_data=["Title", "Url", "Date"])
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        lowercaseSelection=section_selectbox.lower()
-        if lowercaseSelection=="u.s.":
-            df3=df
-            df3=df.convert_dtypes()
-            df3=df3[df3['Section'].str.contains("us")]
-            df3=df3[~df3['Section'].str.contains("ness")]
-            fig=px.bar(df3, x="Name", y="Count", color="Section",
-                hover_data=["Title", "Url", "Date"])
-            st.plotly_chart(fig, use_container_width=True)
+    try:
+        section_selectbox=st.selectbox("What section would you like to see?",
+                                       ("All sections", "Health", "U.S.", "Business", "Upshot",
+                                        "Magazine", "Briefing", "Podcasts",
+                                        "Opinion", "N.Y. Region", "World",
+                                        "Climate", "Dining", "Technology",
+                                        "Style", "Sports", "Arts"))
+        startDate=st.date_input("Start date", pd.to_datetime("2020-09-29"))
+        theStart=pd.to_datetime(str(startDate))
+        endDate=st.date_input("End date", pd.to_datetime("2020-10-10"))
+        theEnd=pd.to_datetime(str(endDate))
+        if startDate < endDate:
+            df['Date'] = pd.to_datetime(df['Date'])
+            dfDated=df.set_index(['Date'])
+            df3=dfDated.loc[str(theStart):str(theEnd)]
+            if section_selectbox=="All sections":
+                fig=px.bar(df3, x="Name", y="Count", color="Section",
+                    hover_data=["Title", "Url", "Publication Date"])
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                try:
+                    lowercaseSelection=section_selectbox.lower()
+                    if lowercaseSelection=="u.s.":
+                        df3=df3[df3['Section'].str.contains("us")]
+                        df3=df3[~df3['Section'].str.contains("ness")]
+                        fig=px.bar(df3, x="Name", y="Count", color="Section",
+                            hover_data=["Title", "Url", "Publication Date"])
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        df3=df3[df3['Section'].str.contains(lowercaseSelection)]
+                        fig=px.bar(df3, x="Name", y="Count", color="Section",
+                                hover_data=["Title", "Url", "Publication Date"])
+                        st.plotly_chart(fig, use_container_width=True)
+                except:
+                    st.error("Error: The database has no stories for the given dates and section. Try a wider date range or click All sections")
         else:
-            df3=df
-            df3=df.convert_dtypes()
-            df3=df3[df3['Section'].str.contains(lowercaseSelection)]
-            fig=px.bar(df3, x="Name", y="Count", color="Section",
-                    hover_data=["Title", "Url", "Date"])
-            st.plotly_chart(fig, use_container_width=True)
+            st.error("Error: The end date must be after the start date.")
+    except:
+        st.error("Error: The database has no stories for the given dates and section. Try a wider date range or click All sections")
 else:
+
     st.text("Chart shows names that appear more than once.")
     df3=df.loc[df.duplicated(subset='Name', keep=False), :]
     fig=px.bar(df3, x="Name", y="Count", color="Section",
-            hover_data=["Title", "Url", "Date"])
+            hover_data=["Title", "Url", "Publication Date"])
     st.plotly_chart(fig, use_container_width=True)
 
 
-######### Tabling
+
+############################### Tabling
 
 showData=st.checkbox("Show the raw data")
 
