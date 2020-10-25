@@ -184,7 +184,7 @@ else:
 
 ################################# Tabling
 ##
-showData=st.checkbox("Show the raw data")
+##showData=st.checkbox("Show the raw data")
 ##
 ##if(showData==True):
 ##    if modifyChart:
@@ -218,6 +218,84 @@ showData=st.checkbox("Show the raw data")
 ##        st.dataframe(sortedDf.style.applymap(highlight_name1))
 ##
 ##
+################ TIMESERIES
+
+query="SELECT Name,Date,Title,Type,Section, Count FROM ARTICLES;"
+seriesDf= load_data(query)
+
+name_user_input = st.text_input("Search for a name.", "Donald Trump")
+searchName=name_user_input.lower()
+seriesDf['Name']=seriesDf['Name'].str.lower()
+seriesDf.loc[:,'Name']=seriesDf.loc[:,'Name'].str.replace("`|’", "'", regex=True)
+serIndexList=seriesDf[seriesDf['Name'].str.contains(searchName)]
+nameFrame=serIndexList
+
+serIndexList['Week/Year'] = serIndexList['Date'].apply(lambda x: "%d/%d" % (x.week, x.year))
+serIndexList=serIndexList.groupby(['Week/Year', 'Name']).size()
+serIndexList=serIndexList.reset_index(level=['Week/Year', 'Name'])
+serIndexList=serIndexList.groupby(['Week/Year']).sum()
+serIndexList["Week"]=serIndexList.index
+serIndexList.columns=['Count',"Week"]
+labString="Number of articles the name "+name_user_input+" appears in "
+labDict={"Week":"Week / Year", "Count":labString}
+timefig=px.bar(serIndexList, x='Week', y='Count',
+               hover_data=['Week', 'Count'],
+                labels=labDict)
+st.plotly_chart(timefig, use_container_width=True)
+st.subheader("Data displayed in chart")
+st.dataframe(nameFrame.style.applymap(highlight_name1))
+st.subheader("")
+st.subheader("")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##
+##
+##serIndexList['Week/Year'] = serIndexList['Date'].apply(lambda x: "%d/%d" % (x.week, x.year))
+##look=serIndexList.groupby(['Week/Year', 'Name']).size()
+##look=look.reset_index(level=['Week/Year', 'Name'])
+##del look['Name']
+##check=look.groupby(['Week/Year']).sum()
+##check["Week"]=check.index
+##check.columns=['Count',"Week"]
+##labString="Number of articles the name "+name_user_input+" appears in."
+##
+##labDict={"Week":"Week / Year", "Count":labString}
+##timefig=px.bar(check, x='Week', y='Count',
+##                labels=labDict)
+##st.plotly_chart(timefig, use_container_width=True)
+##
+
+##
+##timefig=px.line(look, x='Week/Year', y=0)
+##st.plotly_chart(timefig, use_container_width=True)
+
+
+
+##st.plotly_chart(timefig, use_container_width=True)
+##
+##
+##st.dataframe(serIndexList.style.applymap(highlight_name1))
+##
+##
+
+
+
+    
 ################## Search by Article
 ##st.text("")
 st.subheader("Search for a specific article")
@@ -235,7 +313,7 @@ if artIndexList.empty:
     st.error("There are no article titles that contain "+article_user_input)
 else:
     st.dataframe(artIndexList)
-    printList=st.button("Get list of names in aticle(s) with \""+article_user_input+"\" in the title")
+    printList=st.button("Get list of names in article(s) with \""+article_user_input+"\" in the title")
     if printList:
         listDf=artIndexList['Name']
         st.text("You can highlight and copy this list of names:")
