@@ -124,59 +124,85 @@ if modifyChart:
 
     else:
         st.text("Show only names that appear less than "+str(sliderVal)+" times.")
+
     if startDate <= endDate:
-        if section_selectbox=="All sections":
-            query="SELECT Name, count(*) FROM ARTICLES WHERE Date BETWEEN "+"'"+qDate1+"'"+" AND "+"'"+qDate2+"'"+" AND Type LIKE  "+"'"+attributeChoice+"'"+" GROUP BY Name ;"
-            df= load_data(query)
-            df.columns=['Name', 'Number']
-            if moreLess=="Show names that appear MORE than selected number of times":
-                df1=df[df['Number'] > sliderVal]
+            if section_selectbox=="All sections":
+                breakDownSwitch=st.checkbox("Break the data down by section")
+                if breakDownSwitch:
+                    query="SELECT * FROM ARTICLES WHERE Date BETWEEN "+"'"+qDate1+"'"+" AND "+"'"+qDate2+"'"+" AND Type LIKE  "+"'"+attributeChoice+"'"+" ;"       
+                    df= load_data(query)
+                    df['Tally']=df.groupby('Name')['Name'].transform('count')
+                    if moreLess=="Show names that appear MORE than selected number of times":
+                        df=df[df['Tally'] > sliderVal]
+                    else:
+                        df=df[df['Tally'] < sliderVal]
+                    fig=px.bar(df, x="Name", y="Count", color="Section",
+                        hover_data=["Name","Title", "Section"],
+                        labels={"Name":"Name", "Count":"Number of articles the name appers in"})
+                    fig.update_layout(xaxis={'categoryorder':'total descending'})
+                    st.plotly_chart(fig, use_container_width=False)
+                else:
+                    query="SELECT Name, count(*) FROM ARTICLES WHERE Date BETWEEN "+"'"+qDate1+"'"+" AND "+"'"+qDate2+"'"+" AND Type LIKE  "+"'"+attributeChoice+"'"+" GROUP BY Name ;"
+                    df= load_data(query)
+                    df.columns=['Name', 'Number']
+                    if moreLess=="Show names that appear MORE than selected number of times":
+                        df1=df[df['Number'] > sliderVal]
+                    else:
+                        df1=df[df['Number'] < sliderVal]
+                    df1 = df1.sort_values('Number', ascending=True)
+                    fig=px.bar(df1, x="Name", y="Number",
+                               hover_data=["Name"],
+                               labels={"Name":"Name", "Number":"Number of articles the name appers in"})
+                    fig.update_layout(barmode='stack', xaxis={'categoryorder':'total descending'})
+                    st.plotly_chart(fig, use_container_width=True)
             else:
-                df1=df[df['Number'] < sliderVal]
-            df1 = df1.sort_values('Number', ascending=True)
-            fig=px.bar(df1, x="Name", y="Number",
-                       hover_data=["Name"],
-                       labels={"Name":"Name", "Number":"Number of articles the name appers in"})
-            fig.update_layout(barmode='stack', xaxis={'categoryorder':'total descending'})
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            lowercaseSelection=section_selectbox.lower()
-            if lowercaseSelection=="u.s.":
-                lowercaseSelection="us"
-            elif lowercaseSelection=="n.y. region":
-                lowercaseSelection="nyregion"
-            #query="SELECT * FROM ARTICLES WHERE Date BETWEEN "+"'"+qDate1+"'"+" AND "+"'"+qDate2+"'"+" AND Type LIKE  "+"'"+attributeChoice+"'"+" AND Section LIKE "+"'"+lowercaseSelection+"'"+" GROUP BY Name HAVING COUNT(1)>"+str(sliderVal)+" ;"
-            query="SELECT Name, count(*) FROM ARTICLES WHERE Date BETWEEN "+"'"+qDate1+"'"+" AND "+"'"+qDate2+"'"+" AND Type LIKE  "+"'"+attributeChoice+"'"+" AND Section LIKE "+"'"+lowercaseSelection+"'"+" GROUP BY Name ;"
-            df= load_data(query)
-            df.columns=['Name', 'Number']
-            if moreLess=="Show names that appear MORE than selected number of times":
-                df1=df[df['Number'] > sliderVal]
-            else:
-                df1=df[df['Number'] < sliderVal]
-            df1 = df1.sort_values('Number', ascending=True)
-            fig=px.bar(df1, x="Name", y="Number",
-                       hover_data=["Name"],
-                       labels={"Name":"Name", "Number":"Number of articles the name appers in"})
-            fig.update_layout(barmode='stack', xaxis={'categoryorder':'total descending'})
-            st.plotly_chart(fig, use_container_width=True)
+                lowercaseSelection=section_selectbox.lower()
+                if lowercaseSelection=="u.s.":
+                    lowercaseSelection="us"
+                elif lowercaseSelection=="n.y. region":
+                    lowercaseSelection="nyregion"
+                query="SELECT Name, count(*) FROM ARTICLES WHERE Date BETWEEN "+"'"+qDate1+"'"+" AND "+"'"+qDate2+"'"+" AND Type LIKE  "+"'"+attributeChoice+"'"+" AND Section LIKE "+"'"+lowercaseSelection+"'"+" GROUP BY Name ;"
+                df= load_data(query)
+                df.columns=['Name', 'Number']
+                if moreLess=="Show names that appear MORE than selected number of times":
+                    df1=df[df['Number'] > sliderVal]
+                else:
+                    df1=df[df['Number'] < sliderVal]
+                df1 = df1.sort_values('Number', ascending=True)
+                fig=px.bar(df1, x="Name", y="Number",
+                           hover_data=["Name"],
+                           labels={"Name":"Name", "Number":"Number of articles the name appers in"})
+                fig.update_layout(barmode='stack', xaxis={'categoryorder':'total descending'})
+                st.plotly_chart(fig, use_container_width=True)
     else:
         st.error("Error: The end date must be after the start date.")
 else:
-    
-    st.text("Chart shows names that appear more than 100 times.")
-    ##
-    query="SELECT Name, count(*) FROM ARTICLES WHERE Type LIKE 'nltk' GROUP BY Name;"
-    # HAVING COUNT(1)>100 AND Type LIKE 'nltk' ;"
-    df= load_data(query)
-    df.columns=['Name', 'Number']
-    df1=df[df['Number'] > 100]
-    df1 = df1.sort_values('Number', ascending=True)
-    fig=px.bar(df1, x="Name", y="Number",
-                hover_data=["Name"],
-                labels={"Name":"Name", "Number":"Number of articles the name appers in"})
-    fig.update_layout(barmode='stack', xaxis={'categoryorder':'total descending'})
-    st.plotly_chart(fig, use_container_width=True)
-    
+    breakDownSwitch1=st.checkbox("Break the data down by section")
+    if breakDownSwitch1:
+        st.text("Chart shows names that appear more than 100 times in the last few months.")
+        query1="SELECT * FROM ARTICLES WHERE Type LIKE 'nltk';"
+        df= load_data(query1)
+        df['Tally']=df.groupby('Name')['Name'].transform('count')
+        df=df[df['Tally'] > 100]
+        fig=px.bar(df, x="Name", y="Count", color="Section",
+                    hover_data=["Name","Title", "Section"],
+                    labels={"Name":"Name", "Count":"Number of articles the name appers in"})
+        fig.update_layout(xaxis={'categoryorder':'total descending'})
+        st.plotly_chart(fig, use_container_width=False)
+    else:
+        st.text("Chart shows names that appear more than 100 times.")
+        ##
+        query="SELECT Name, count(*) FROM ARTICLES WHERE Type LIKE 'nltk' GROUP BY Name;"
+        # HAVING COUNT(1)>100 AND Type LIKE 'nltk' ;"
+        df= load_data(query)
+        df.columns=['Name', 'Number']
+        df1=df[df['Number'] > 100]
+        df1 = df1.sort_values('Number', ascending=True)
+        fig=px.bar(df1, x="Name", y="Number",
+                    hover_data=["Name"],
+                    labels={"Name":"Name", "Number":"Number of articles the name appers in"})
+        fig.update_layout(barmode='stack', xaxis={'categoryorder':'total descending'})
+        st.plotly_chart(fig, use_container_width=True)
 
 
 ######################
@@ -219,12 +245,10 @@ else:
 ##
 ##
 ################ TIMESERIES
-
-query="SELECT Name,Date,Title,Type,Section, Count FROM ARTICLES;"
-seriesDf= load_data(query)
-
 name_user_input = st.text_input("Search for a name.", "Donald Trump")
 searchName=name_user_input.lower()
+query="SELECT Name,Date,Title,Type,Section, Count FROM ARTICLES;"
+seriesDf= load_data(query)
 seriesDf['Name']=seriesDf['Name'].str.lower()
 seriesDf.loc[:,'Name']=seriesDf.loc[:,'Name'].str.replace("`|’", "'", regex=True)
 serIndexList=seriesDf[seriesDf['Name'].str.contains(searchName)]
@@ -323,3 +347,38 @@ else:
 ## 
 ##
 ##
+##                lowercaseSelection=section_selectbox.lower()
+##                if lowercaseSelection=="u.s.":
+##                    lowercaseSelection="us"
+##                elif lowercaseSelection=="n.y. region":
+##                    lowercaseSelection="nyregion"
+##                query="SELECT * FROM ARTICLES WHERE Date BETWEEN "+"'"+qDate1+"'"+" AND "+"'"+qDate2+"'"+" AND Type LIKE  "+"'"+attributeChoice+"'"+" AND Section LIKE "+"'"+lowercaseSelection+"'"+" ;"
+##                df= load_data(query)
+##                df['Tally']=df.groupby('Name')['Name'].transform('count')
+##                if moreLess=="Show names that appear MORE than selected number of times":
+##                    df=df[df['Tally'] > sliderVal]
+##                else:
+##                    df=df[df['Tally'] < sliderVal]
+##                fig=px.bar(df, x="Name", y="Count", color="Section",
+##                    hover_data=["Name","Title", "Section"],
+##                    labels={"Name":"Name", "Count":"Number of articles the name appers in"})
+##                fig.update_layout(xaxis={'categoryorder':'total descending'})
+##                st.plotly_chart(fig, use_container_width=False)
+##
+##
+##        else:
+##            
+##            if section_selectbox=="All sections":
+##                query="SELECT Name, count(*) FROM ARTICLES WHERE Date BETWEEN "+"'"+qDate1+"'"+" AND "+"'"+qDate2+"'"+" AND Type LIKE  "+"'"+attributeChoice+"'"+" GROUP BY Name ;"
+##                df= load_data(query)
+##                df.columns=['Name', 'Number']
+##                if moreLess=="Show names that appear MORE than selected number of times":
+##                    df1=df[df['Number'] > sliderVal]
+##                else:
+##                    df1=df[df['Number'] < sliderVal]
+##                df1 = df1.sort_values('Number', ascending=True)
+##                fig=px.bar(df1, x="Name", y="Number",
+##                           hover_data=["Name"],
+##                           labels={"Name":"Name", "Number":"Number of articles the name appers in"})
+##                fig.update_layout(barmode='stack', xaxis={'categoryorder':'total descending'})
+##                st.plotly_chart(fig, use_container_width=True)
