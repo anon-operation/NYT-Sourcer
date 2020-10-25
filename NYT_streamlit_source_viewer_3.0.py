@@ -1,20 +1,16 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pickle
 import plotly.express as px
 import plotly.io as pio
 import datetime
-pio.renderers.default = 'firefox'
 import sqlite3
 from sqlite3 import Connection
 import sqlalchemy
 from sqlalchemy import create_engine
 import time
+###############
 
-
-sqlfilename = "NYT.sqlite"
-engineString='sqlite:///'+sqlfilename
 
 @st.cache(allow_output_mutation=True)
 def get_connection(engineString):
@@ -28,7 +24,7 @@ def createQuery(fieldName,queryFieldName,queryValue):
     qString += " WHERE " + queryFieldName + queryValue
     return qString
 
-@st.cache(allow_output_mutation=True)
+@st.cache(allow_output_mutation=True, max_entries=10, persist=True)
 def load_data(queryString):
     with st.spinner('Loading Data...'):
         time.sleep(0.5)
@@ -39,7 +35,7 @@ def load_data(queryString):
             RanVar=0
     return df
 
-@st.cache
+@st.cache(max_entries=10)
 def highlight_name1(val):
     strung=str(val)
     loweredVal=strung.lower()
@@ -52,15 +48,18 @@ def highlight_name1(val):
 
 st.title("The Sourcer...beta version")
 
+
+sqlfilename = "NYT.sqlite"
+engineString='sqlite:///'+sqlfilename
 query = createQuery("*","Count"," ==1 ;")
 df = load_data(query)
-
 ############ Header
 st.header("Find names that appear in news stories")
 
 ########### sidebar
-st.sidebar.header("Welcome to the Sourcer App")
-st.sidebar.subheader("This app shows names that appear in the text of New York Times Articles.")
+
+one=st.sidebar.header("Welcome to the Sourcer App")
+two=st.sidebar.subheader("This app shows names that appear in the text of New York Times Articles.")
 moreInfo=st.sidebar.button("More info")
 if moreInfo:
     st.sidebar.subheader("This app began as a question:")
@@ -69,6 +68,7 @@ if moreInfo:
     st.sidebar.subheader("Each day the database of included articles grows. They come from the monthly archives of the New York Times.")
     st.sidebar.subheader("Additionally, I'm working to improve the accuracy of the name recognition, so that names like \"Mr. Trump\" and \"Donald Trump\" are seen as the same name and to exclude place names from recognition.")
     st.sidebar.subheader("The source code is availible for inspection at: https://github.com/anon-operation/NYT-Sourcer.git")
+
 ##
 #################  Main Graph
 ##
@@ -202,55 +202,73 @@ else:
 
 ######################
 ##
+@st.cache(max_entries=10)
+def timeSeriesQuery(nameInput):
+    searchName=nameInput.lower()
+    query="SELECT Name,Date,Title,Type,Section, Count FROM ARTICLES;"
+    seriesDf= load_data(query)
+    seriesDf['Name']=seriesDf['Name'].str.lower()
+    seriesDf.loc[:,'Name']=seriesDf.loc[:,'Name'].str.replace("`|’", "'", regex=True)
+    serIndexList=seriesDf[seriesDf['Name'].str.contains(searchName)]
+    nameFrame=serIndexList
+    serIndexList['Week/Year'] = serIndexList['Date'].apply(lambda x: "%d/%d" % (x.week, x.year))
+    serIndexList=serIndexList.groupby(['Week/Year', 'Name']).size()
+    serIndexList=serIndexList.reset_index(level=['Week/Year', 'Name'])
+    serIndexList=serIndexList.groupby(['Week/Year']).sum()
+    serIndexList["Week"]=serIndexList.index
+    serIndexList.columns=['Count',"Week"]
+    return [serIndexList,nameFrame]
 
-##
-################ TIMESERIES
+@st.cache(max_entries=10)
+def TsChart(dataFrame, name_input):
+    labString="Number of articles the name "+name_input+" appears in "
+    labDict={"Week":"Week / Year", "Count":labString}
+    timefig=px.bar(dataFrame, x='Week', y='Count',
+               hover_data=['Week', 'Count'],
+                labels=labDict)
+    return timefig
+
+
 st.text("")
 st.header("Search for name appearances per week")
 name_user_input = st.text_input("Search for a name.", "Donald Trump")
-searchName=name_user_input.lower()
-query="SELECT Name,Date,Title,Type,Section, Count FROM ARTICLES;"
-seriesDf= load_data(query)
-seriesDf['Name']=seriesDf['Name'].str.lower()
-seriesDf.loc[:,'Name']=seriesDf.loc[:,'Name'].str.replace("`|’", "'", regex=True)
-serIndexList=seriesDf[seriesDf['Name'].str.contains(searchName)]
-nameFrame=serIndexList
+res=timeSeriesQuery(name_user_input)
+TsFig=TsChart(res[0],name_user_input)
+st.plotly_chart(TsFig, use_container_width=True)
+rawDataCheckbox=st.checkbox("Click to see raw data in chart")
+if rawDataCheckbox:
+    st.subheader("Data displayed in chart")
+    st.dataframe(res[1].style.applymap(highlight_name1))
+    st.subheader("")
+    st.subheader("")
 
-serIndexList['Week/Year'] = serIndexList['Date'].apply(lambda x: "%d/%d" % (x.week, x.year))
-serIndexList=serIndexList.groupby(['Week/Year', 'Name']).size()
-serIndexList=serIndexList.reset_index(level=['Week/Year', 'Name'])
-serIndexList=serIndexList.groupby(['Week/Year']).sum()
-serIndexList["Week"]=serIndexList.index
-serIndexList.columns=['Count',"Week"]
-labString="Number of articles the name "+name_user_input+" appears in "
-labDict={"Week":"Week / Year", "Count":labString}
-timefig=px.bar(serIndexList, x='Week', y='Count',
-               hover_data=['Week', 'Count'],
-                labels=labDict)
-st.plotly_chart(timefig, use_container_width=True)
-st.subheader("Data displayed in chart")
-st.dataframe(nameFrame.style.applymap(highlight_name1))
-st.subheader("")
-st.subheader("")
+
+
+################## Search by Article
+@st.cache(max_entries=10)
+def ArtSearchQuery(article_input):
+    lowerArtName=article_input.lower()
+    query="SELECT Title,Name,Date,Type,Section FROM ARTICLES ;"
+    articleDf= load_data(query)
+    articleDf['Title']=articleDf['Title'].str.lower()
+    articleDf.loc[:,'Title']=articleDf.loc[:,'Title'].str.replace("`|’", "'", regex=True)
+    artIndexList=articleDf[articleDf['Title'].str.contains(lowerArtName)]
+    return artIndexList
+
 
     
-################## Search by Article
-##st.text("")
 st.header("Search for a specific article")
 article_user_input = st.text_input("Search for an article.", "")
-lowerArtName=article_user_input.lower()
-query="SELECT Title,Name,Date,Type,Section FROM ARTICLES ;"
-articleDf= load_data(query)
-articleDf['Title']=articleDf['Title'].str.lower()
-articleDf.loc[:,'Title']=articleDf.loc[:,'Title'].str.replace("`|’", "'", regex=True)
-artIndexList=articleDf[articleDf['Title'].str.contains(lowerArtName)]
-if artIndexList.empty:
-    st.error("There are no article titles that contain "+article_user_input)
-else:
-    st.dataframe(artIndexList)
-    printList=st.button("Get list of names in article(s) with \""+article_user_input+"\" in the title")
-    if printList:
-        listDf=artIndexList['Name']
-        st.text("You can highlight and copy this list of names:")
-        for name in listDf:
-            st.text(name)
+if article_user_input!="":
+    Articles=ArtSearchQuery(article_user_input)
+    if Articles.empty:
+        st.error("There are no article titles that contain "+article_user_input)
+    else:
+        st.dataframe(Articles)
+        printList=st.button("Get list of names in article(s) with \""+article_user_input+"\" in the title")
+        if printList:
+            listDf=Articles['Name']
+            st.text("You can highlight and copy this list of names:")
+            for name in listDf:
+                st.text(name)
+
