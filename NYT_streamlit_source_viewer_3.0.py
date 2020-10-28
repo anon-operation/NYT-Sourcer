@@ -266,7 +266,6 @@ if addName:
     resName2=res2[0]
     resName2['Name']=name_user_input2
     twoNames=resName1.append(resName2, ignore_index=True)
-    st.write(twoNames)
     TsFig2=TsChart2(twoNames,name_user_input2)
     st.plotly_chart(TsFig2, use_container_width=True)
     rawDataCheckbox=st.checkbox("Click to see raw data in chart")
