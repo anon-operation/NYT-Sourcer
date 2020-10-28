@@ -46,6 +46,20 @@ def highlight_name1(val):
         color = 'black'
     return 'color: %s' % color
 
+@st.cache(max_entries=10)
+def highlight_name2(val):
+    strung=str(val)
+    loweredVal=strung.lower()
+    loweredInput=name_user_input.lower()
+    loweredInput2=name_user_input2.lower()
+    if loweredInput in loweredVal:
+        color = 'red'
+    elif loweredInput2 in loweredVal:
+        color = 'blue'
+    else:
+        color = 'black'
+    return 'color: %s' % color
+
 st.title("The Sourcer...beta version")
 
 
@@ -202,7 +216,7 @@ else:
 
 ######################
 ##
-@st.cache(max_entries=10)
+@st.cache(allow_output_mutation=True,max_entries=10)
 def timeSeriesQuery(nameInput):
     searchName=nameInput.lower()
     query="SELECT Name,Date,Title,Type,Section, Count FROM ARTICLES;"
@@ -228,19 +242,55 @@ def TsChart(dataFrame, name_input):
                 labels=labDict)
     return timefig
 
+@st.cache(max_entries=10)
+def TsChart2(dataFrame, name_input):
+    labString="Number of articles the name "+name_input+" appears in "
+    labDict={"Week":"Week / Year", "Count":labString}
+    timefig=px.bar(dataFrame, x='Week', y='Count', color='Name', barmode='group',
+               hover_data=['Week', 'Count'],
+                labels=labDict)
+    return timefig
+
 
 st.text("")
 st.header("Search for name appearances per week")
 name_user_input = st.text_input("Search for a name.", "Donald Trump")
-res=timeSeriesQuery(name_user_input)
-TsFig=TsChart(res[0],name_user_input)
-st.plotly_chart(TsFig, use_container_width=True)
-rawDataCheckbox=st.checkbox("Click to see raw data in chart")
-if rawDataCheckbox:
-    st.subheader("Data displayed in chart")
-    st.dataframe(res[1].style.applymap(highlight_name1))
-    st.subheader("")
-    st.subheader("")
+addName=st.checkbox("Add another name and compare")
+if addName:
+    res=timeSeriesQuery(name_user_input)
+    TsFig=TsChart(res[0],name_user_input)
+    name_user_input2 = st.text_input("Search for a name.", "Biden")
+    resName1=res[0]
+    resName1['Name']=name_user_input
+    res2=timeSeriesQuery(name_user_input2)
+    resName2=res2[0]
+    resName2['Name']=name_user_input2
+    twoNames=resName1.append(resName2, ignore_index=True)
+    st.write(twoNames)
+    TsFig2=TsChart2(twoNames,name_user_input2)
+    st.plotly_chart(TsFig2, use_container_width=True)
+    rawDataCheckbox=st.checkbox("Click to see raw data in chart")
+    if rawDataCheckbox:
+        st.subheader("Data displayed in chart")
+        NameData1=res[1]
+        NameData2=res2[1]
+        twoNames=NameData1.append(NameData2, ignore_index=True)
+        twoNames=twoNames.sort_values(by='Date')
+        st.dataframe(twoNames.style.applymap(highlight_name2))
+        st.subheader("")
+        st.subheader("")
+
+else:
+    res=timeSeriesQuery(name_user_input)
+    TsFig=TsChart(res[0],name_user_input)
+    st.plotly_chart(TsFig, use_container_width=True)
+    rawDataCheckbox=st.checkbox("Click to see raw data in chart")
+    if rawDataCheckbox:
+        st.subheader("Data displayed in chart")
+        st.dataframe(res[1].style.applymap(highlight_name1))
+        st.subheader("")
+        st.subheader("")
+
 
 
 
