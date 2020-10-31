@@ -78,6 +78,12 @@ def load_NYT_data():
                 lower=nameClean.lower()
                 print(lower, section, url, fixedDate, title, count,"low_method1",sep=",", file=outfile)
 
+            for name in HTML_1_NER:
+                nameS=name.replace(",", " ")
+                nameClean=" ".join(nameS.split())
+                lower=nameClean.lower()
+                print(lower, section, url, fixedDate, title, count,"ner_method1",sep=",", file=outfile)
+
             for name in HTML_1_known:
                 nameS=name.replace(",", " ")
                 nameClean=" ".join(nameS.split())
@@ -109,6 +115,13 @@ def load_NYT_data():
                 lower=nameClean.lower()
                 print(lower, section, url, fixedDate, title, count,"low_method2",sep=",", file=outfile)
 
+            for name in HTML_2_NER:
+                nameS=name.replace(",", " ")
+                nameClean=" ".join(nameS.split())
+                lower=nameClean.lower()
+                print(lower, section, url, fixedDate, title, count,"ner_method2",sep=",", file=outfile)
+
+
             for name in HTML_2_known:
                 nameS=name.replace(",", " ")
                 nameClean=" ".join(nameS.split())
@@ -124,7 +137,7 @@ def load_NYT_data():
 
     return df
 
-sqlfilename = "NYT.sqlite"
+sqlfilename = "DB.sqlite"
 
 connex = sqlite3.connect(sqlfilename)
 curs = connex.cursor()
