@@ -247,7 +247,7 @@ monthQ=input("What month? ")
 
 preReq="https://api.nytimes.com/svc/archive/v1/"+str(yearQ)+"/"+str(monthQ)+".json?api-key="
 
-your_key = "NvGuIuMdcbXyiG93pKU4pH3ArcFv6flj"
+your_key = ""
 getReq=(preReq+your_key)
 result = requests.get(getReq)
 print(result.status_code) #200 is all good
