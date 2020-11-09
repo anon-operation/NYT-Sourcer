@@ -59,8 +59,11 @@ def urlToString(url):
 
 
 attributions = ["said","says","according","explains","explained","agreed"]
-High_attributions = ["said","says","according","explains","explained", "explain","say"]
+High_attributions = ["said","says","according","explains","explained", "explain","say", "tweeted"]
 Low_attributions = ["recalls","recalled","thinks","think","describe","agreed","agrees","describes","described","points""pointed","point","indicates","indicate","indicated"]
+proNouns = ["he","she"]
+
+
 
 Highnamelist = []
 Lownamelist = []
@@ -213,9 +216,10 @@ def SaidFinder(text):
         wor = i
         wordCounter+=1
         #print(wor)
+        initLookFlag=True
         if wor in High_attributions:
             index = words.index(wor)
-            #print("Index of said is: ", wordCounter)
+            #print("%%%%%%%%%%%%%%Index of said is: ", wordCounter, words[wordCounter])
             #print("It's: ", words[index])
             notFound = True
             lookupNum = 1
@@ -224,26 +228,41 @@ def SaidFinder(text):
                     toExamineForward = words[wordCounter+lookupNum]
                     toExamineBackward = words[wordCounter-lookupNum]
                 except:
-                    #print("error")
+                    print("error")
                     notFound = False
                 #print("Looking at:",toExamineForward,toExamineBackward)
                 hasFound = False
                 for nameS in noPuncNames:
                     #print(nameS)
                     if hasFound == False:
-                        if ((toExamineBackward in nameS) or (toExamineForward in nameS)):
-                            #print("Source is: ", nameS)
-                            NumSourceDict[wordCounter] = nameS
-                            hasFound = True
-                            notFound = False
-##                        else:
-##                            if hasFound == False:
-##                                if toExamineBackward in nameS:
-##                                    print("Source is: ", nameS)
-##                                    hasFound = True
-##                                    notFound = False
+                        if initLookFlag ==True:
+                            for pronoun in proNouns:
+                                if ((pronoun == toExamineBackward) or (pronoun == toExamineForward)):
+                                    #print("Source is: ", pronoun)
+                                    hasFound = True
+                                    notFound = False
+                                    initLookFlag =False
+                            if ((toExamineBackward in nameS) or (toExamineForward in nameS)):
+                                #print("Source is: ", nameS)
+                                NumSourceDict[wordCounter] = nameS
+                                hasFound = True
+                                notFound = False
+                                initLookFlag =False
+
+                        else:
+                            if ((toExamineBackward in nameS) or (toExamineForward in nameS)):
+                                #print("Source is: ", nameS)
+                                NumSourceDict[wordCounter] = nameS
+                                hasFound = True
+                                notFound = False
+    ##                            if hasFound == False:
+    ##                                if toExamineBackward in nameS:
+    ##                                    print("Source is: ", nameS)
+    ##                                    hasFound = True
+    ##                                    notFound = False
                 lookupNum+=1
         notFound = True
+    #print(NumSourceDict)
     return NumSourceDict
 
 def QuoteFinder(text):
@@ -257,10 +276,9 @@ def QuoteFinder(text):
         #wNum+=1
         breakDown = list(word)
         #print(breakDown)
-##        if ("”" in breakDown or "“" in breakDown or "\"" in breakDown):
         if ("“" in breakDown or "\"" in breakDown):
             if wordNum not in endQuoteList: 
-                print(word)
+##                print(word)
                 if startVar==0:
                     notFound = True
                     nextNum = wordNum
@@ -270,20 +288,49 @@ def QuoteFinder(text):
                             nextNextWord = words[nextNum+2]
 ##                            print(nextWord,nextNextWord)
 ##                            print(nextNum)
-                            if ("”" in nextWord or "“" in nextWord or "\"" in nextWord):
-                                print("Quote ends with ", nextWord)
-                                print("This is word number: ", nextNum)
-                                endQuoteList.append(nextNum)
+                            if ("”" in nextWord or "\"" in nextWord):
+##                                print("Quote ends with ", nextWord)
+##                                print("This is word number: ", nextNum+1, " or ", wordNum)
+##                                print("Is this Correct: ", words[nextNum+1])
+                                notFoundName = True
+                                lookupNum = 1
+                                counter=0
+                                while ((notFoundName==True) and (counter < 4)):
+##                                    print(counter)
+                                    try:
+                                        toExamineForward = words[(nextNum+1)+lookupNum]
+                                        toExamineBackward = words[(nextNum+1)-lookupNum]
+##                                        print("++++ ",toExamineForward)
+                                        if (toExamineForward in proNouns):
+##                                            print("It's A pronoun at: ",toExamineForward )
+                                            notFoundName = False
+                                            counter = 4
+                                        else:
+                                            counter+=1
+                                            lookupNum+=1
+                                            #print("Counter is: ", counter)
+                                    except Exception as e:
+                                        print(e)
+                                        print("error")
+                                        counter = 3
+                                    if counter == 3:    
+                                        endQuoteList.append(nextNum)
+                                        notFoundName = False
+                                        startVar = 0               
+##                                endQuoteList.append(nextNum)
                                 notFound = False
                                 startVar = 0
                             else:
                                 nextNum+=1
+                                non=0
                         except:
                             notFound = False
 ##            if startVar==1:
 ##                wNum+=1
         wordNum+=1
+##    print(endQuoteList)
     return endQuoteList
+                
                 
 def NumericalCompare(dictionary,aList):
     likelySources = []
