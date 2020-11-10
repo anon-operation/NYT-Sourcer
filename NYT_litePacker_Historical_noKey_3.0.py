@@ -58,10 +58,14 @@ def urlToString(url):
     return ' ' .join(re.split(r'[\n\t]+', soup.get_text()))
 
 
+
 attributions = ["said","says","according","explains","explained","agreed"]
-High_attributions = ["said","says","according","explains","explained", "explain","say", "tweeted"]
+High_attributions = ["said","says","according","explains",
+                     "explained", "explain","say", "tweeted",
+                     "yelled","yells","told","tells"]
 Low_attributions = ["recalls","recalled","thinks","think","describe","agreed","agrees","describes","described","points""pointed","point","indicates","indicate","indicated"]
 proNouns = ["he","she"]
+anonList=["official","source","spokesman","spokesperson","spokeswoman"]
 
 
 
@@ -190,15 +194,53 @@ def alphabetize(name):
                 KnownNamesDict[letter] = toapplist
     return()
 
+def nounEntityFinder(text):
+    text=nltk.word_tokenize(text)
+    text = nltk.pos_tag(text)
+    NPpattern='NP:{<DT>?<NN>}'
+    cp=nltk.RegexpParser(NPpattern)
+    chunked=cp.parse(text)
+    iob=tree2conlltags(chunked)
+    counter=(-1)
+    for word in iob:
+        counter+=1
+##        print(word)
+        typeOf = (word[1])
+        if typeOf == "DT":
+    ##        print(typeOf)
+            nextI = iob[counter+1]
+    ##        print("Next is ",nextI)
+            typeOfNext=nextI[1]
+            if ((typeOfNext == "NNP") or (typeOfNext == "NNPS") or (typeOfNext=="NN")or(typeOfNext=="NNS")):
+    ##            print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$", word[0],nextI[0])
+                nextNextI = iob[counter+2]
+                textOfNextNext=nextNextI[0]
+                lowText=textOfNextNext.lower()
+                if lowText in High_attributions:
+                    string=[]
+                    string.append(word[0])
+                    string.append(nextI[0])
+                    namePhrase=' '.join(string)
+                    nerNameList.append(namePhrase)
+                    print(namePhrase)
+                    
+
 def NERmethod(text):
     nlp = en_core_web_sm.load()
     doc=nlp(text)
-    nerNameList=[]
+    words=text.split(" ")
+    for word in words:
+        lower=word.lower()
+        if lower in anonList:
+            if word not in nerNameList:
+                nerNameList.append(word)
     for x in doc.ents:
+        print(x.label)
         if x.label_ == "PERSON":
             if x.text not in nerNameList:
                 nerNameList.append(x.text)
-    #print(nerNameList)
+##    print("LLLLLLLLLLLLLLLLLLOOOOOK",nerNameList)
+##    print(nerNameList)
     return nerNameList
 
 def SaidFinder(text):
@@ -209,7 +251,7 @@ def SaidFinder(text):
     for name in nerNameList:
         cleanName = re.sub(r'[^\w\s]','',name)
         noPuncNames.append(cleanName)
-    #print(noPuncNames)
+##    print(noPuncNames)
     words = noPunc.split(" ")
     wordCounter=(-1)
     for i in words:
@@ -219,8 +261,8 @@ def SaidFinder(text):
         initLookFlag=True
         if wor in High_attributions:
             index = words.index(wor)
-            #print("%%%%%%%%%%%%%%Index of said is: ", wordCounter, words[wordCounter])
-            #print("It's: ", words[index])
+            print("%%%%%%%%%%%%%%Index of said is: ", wordCounter, words[wordCounter])
+            print("It's: ", words[index])
             notFound = True
             lookupNum = 1
             while notFound:
@@ -230,7 +272,7 @@ def SaidFinder(text):
                 except:
                     print("error")
                     notFound = False
-                #print("Looking at:",toExamineForward,toExamineBackward)
+##                print("Looking at:",toExamineForward,toExamineBackward)
                 hasFound = False
                 for nameS in noPuncNames:
                     #print(nameS)
@@ -238,12 +280,21 @@ def SaidFinder(text):
                         if initLookFlag ==True:
                             for pronoun in proNouns:
                                 if ((pronoun == toExamineBackward) or (pronoun == toExamineForward)):
-                                    #print("Source is: ", pronoun)
+                                    print("Source is: ", pronoun)
                                     hasFound = True
                                     notFound = False
                                     initLookFlag =False
+                                    ###
+##                                else:
+##                                    for name in nerNameList:
+##                                        if ((name == toExamineBackward) or (name == toExamineForward)):
+##                                            print("Source is: ", name)
+##                                            hasFound = True
+##                                            notFound = False
+##                                            initLookFlag =False
+##                                ####
                             if ((toExamineBackward in nameS) or (toExamineForward in nameS)):
-                                #print("Source is: ", nameS)
+                                print("Source is: ", nameS)
                                 NumSourceDict[wordCounter] = nameS
                                 hasFound = True
                                 notFound = False
@@ -251,7 +302,7 @@ def SaidFinder(text):
 
                         else:
                             if ((toExamineBackward in nameS) or (toExamineForward in nameS)):
-                                #print("Source is: ", nameS)
+                                print("Source is: ", nameS)
                                 NumSourceDict[wordCounter] = nameS
                                 hasFound = True
                                 notFound = False
@@ -262,7 +313,7 @@ def SaidFinder(text):
     ##                                    notFound = False
                 lookupNum+=1
         notFound = True
-    #print(NumSourceDict)
+    print(NumSourceDict)
     return NumSourceDict
 
 def QuoteFinder(text):
@@ -289,9 +340,9 @@ def QuoteFinder(text):
 ##                            print(nextWord,nextNextWord)
 ##                            print(nextNum)
                             if ("”" in nextWord or "\"" in nextWord):
-##                                print("Quote ends with ", nextWord)
-##                                print("This is word number: ", nextNum+1, " or ", wordNum)
-##                                print("Is this Correct: ", words[nextNum+1])
+                                print("Quote ends with ", nextWord)
+                                print("This is word number: ", nextNum+1, " or ", wordNum)
+                                print("Is this Correct: ", words[nextNum+1])
                                 notFoundName = True
                                 lookupNum = 1
                                 counter=0
@@ -308,7 +359,7 @@ def QuoteFinder(text):
                                         else:
                                             counter+=1
                                             lookupNum+=1
-                                            #print("Counter is: ", counter)
+##                                            print("Counter is: ", counter)
                                     except Exception as e:
                                         print(e)
                                         print("error")
@@ -328,9 +379,8 @@ def QuoteFinder(text):
 ##            if startVar==1:
 ##                wNum+=1
         wordNum+=1
-##    print(endQuoteList)
+    print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",endQuoteList)
     return endQuoteList
-                
                 
 def NumericalCompare(dictionary,aList):
     likelySources = []
@@ -339,8 +389,8 @@ def NumericalCompare(dictionary,aList):
         likelySourceNumber = min(theList, key=lambda x:abs(x-item))
         source = dictionary[likelySourceNumber]
         likelySources.append(source)
+        print("Likelys are ",likelySources)
     return likelySources
-
 
 ##################### Incorporate previous data  ########################
 automateQ = input("Do you want to automate the process? ")
@@ -794,9 +844,34 @@ for month in monthS:
                 topStoriesDict[key] = current
                 
     ####################################### Quotation Methods ##########################################
+##                nerNameList=[]
+##                entities=nounEntityFinder(text)
+##                for entity in entities:
+##                    nerNameList.append(entity)
+##                Ners=NERmethod(text)
+##                for ner in Ners:
+##                    nerNameList.append(ner)
+##                NumSourceDict = SaidFinder(text)
+##                print("Numericals is: ", NumSourceDict)
+##                qList=QuoteFinder(text)
+##                print("Qs are: ", qList)
+##                theMathematicalSources = NumericalCompare(NumSourceDict,qList)
+##                quoteSources = list(set(theMathematicalSources))
+##                lowQuoteSources=[]
+##                for name in quoteSources:
+##                    lowered = name.lower()
+##                    lowQuoteSources.append(lowered)
+##                thisArticlesSourcesDict["HTML_1"]["Quotations"] = list(lowQuoteSources)
+##                current.sources = thisArticlesSourcesDict
+##                topStoriesDict[key] = current
+##                
+                nerNameList=[]
+                nounEntityFinder(text)
                 nerNameList=NERmethod(text)
                 NumSourceDict = SaidFinder(text)
+                print("Numericals is: ", NumSourceDict)
                 qList=QuoteFinder(text)
+                print("Qs are: ", qList)
                 theMathematicalSources = NumericalCompare(NumSourceDict,qList)
                 quoteSources = list(set(theMathematicalSources))
                 lowQuoteSources=[]
@@ -807,14 +882,13 @@ for month in monthS:
                 current.sources = thisArticlesSourcesDict
                 topStoriesDict[key] = current
                 
-
                     
                 print("*****************************************************") 
                 print("End HTML Quote List: ", qList)
                 print("All Names: ", nerNameList)
                 print(theMathematicalSources)
 
-
+                
     ####################################### Clear Variables ##########################################
 
 
@@ -1096,9 +1170,25 @@ for month in monthS:
                 topStoriesDict[key] = current
                 
     ####################################### Quotation Methods ##########################################
+##                nerNameList=NERmethod(theStorySoFar)
+##                NumSourceDict = SaidFinder(theStorySoFar)
+##                qList=QuoteFinder(theStorySoFar)
+##                theMathematicalSources = NumericalCompare(NumSourceDict,qList)
+##                quoteSources = list(set(theMathematicalSources))
+##                lowQuoteSources=[]
+##                for name in quoteSources:
+##                    lowered = name.lower()
+##                    lowQuoteSources.append(lowered)
+##                thisArticlesSourcesDict["HTML_BS"]["Quotations"] = list(lowQuoteSources)
+##                current.sources = thisArticlesSourcesDict
+##                topStoriesDict[key] = current
+                nerNameList=[]
+                nounEntityFinder(theStorySoFar)
                 nerNameList=NERmethod(theStorySoFar)
                 NumSourceDict = SaidFinder(theStorySoFar)
-                qList=QuoteFinder(theStorySoFar)
+                print("Numericals is: ", NumSourceDict)
+                qList=QuoteFinder(text)
+                print("Qs are: ", qList)
                 theMathematicalSources = NumericalCompare(NumSourceDict,qList)
                 quoteSources = list(set(theMathematicalSources))
                 lowQuoteSources=[]
@@ -1109,6 +1199,14 @@ for month in monthS:
                 current.sources = thisArticlesSourcesDict
                 topStoriesDict[key] = current
                 
+
+##                    
+##                print("*****************************************************") 
+##                print("End HTML Quote List: ", qList)
+##                print("All Names: ", nerNameList)
+##                print(theMathematicalSources)
+##
+
 
     ####################################### Clear Variables ##########################################
 
