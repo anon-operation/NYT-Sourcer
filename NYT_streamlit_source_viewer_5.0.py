@@ -64,7 +64,9 @@ def highlight_name2(val):
 st.title("The Sourcer...beta version")
 
 
-sqlfilename = "DB.sqlite"
+##sqlfilename = "DB.sqlite"
+sqlfilename = "reglobbed.sqlite"
+
 engineString='sqlite:///'+sqlfilename
 query = createQuery("*","Count"," ==1 ;")
 df = load_data(query)
