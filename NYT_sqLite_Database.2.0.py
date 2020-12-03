@@ -181,10 +181,10 @@ if str(Q1)=="1":
     data=load_NYT_data()
     print(data)
 if str(Q1)=="2":
-    print("To split, type: split -l 100000 toDatabaseData.txt split_")
+    print("To split, type: split -l 100000 toDatabaseData.txt Sept_split_")
 if str(Q1)=="3":
     import glob
-    reads=glob.glob("split_*")
+    reads=glob.glob("Sept_split_*")
 
     with open("reglobbed.txt", "wb") as outfile:
         for f in reads:
