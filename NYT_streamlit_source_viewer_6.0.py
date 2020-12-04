@@ -306,7 +306,7 @@ else:
 if addName:
     res=timeSeriesQuery(name_user_input,attributeChoice2)
     TsFig=TsChart(res[0],name_user_input)
-    name_user_input2 = st.text_input("Search for a name.", "Biden")
+    name_user_input2 = st.text_input("Search for a name.", "Joe Biden")
     resName1=res[0]
     resName1['Name']=name_user_input
     res2=timeSeriesQuery(name_user_input2,attributeChoice2)
